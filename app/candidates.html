@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TalentBridge – Candidates</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f4f6f9; color: #1a1a2e; }
+    header { background: #1a1a2e; color: #fff; padding: 16px 32px; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    main { max-width: 860px; margin: 40px auto; padding: 0 16px; }
+    h2 { font-size: 1.1rem; margin-bottom: 20px; color: #333; }
+    #candidate-list { display: flex; flex-direction: column; gap: 12px; }
+    .candidate-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      border: 1px solid #dde1e9;
+      border-radius: 8px;
+      padding: 14px 20px;
+    }
+    .candidate-name { font-weight: 500; font-size: 0.97rem; }
+    .candidate-status {
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #e6f4ea;
+      color: #2e7d32;
+      font-weight: 500;
+    }
+    .archive-btn {
+      background: #fce4ec;
+      color: #c62828;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .archive-btn:hover { background: #f8bbd0; }
+    #empty-state { color: #888; font-style: italic; padding: 20px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TalentBridge — Recruiting Dashboard</h1>
+  </header>
+  <main>
+    <h2>Active Candidates</h2>
+    <div id="candidate-list"></div>
+    <p id="empty-state" style="display:none">No active candidates found.</p>
+  </main>
+
+  <script>
+    async function loadCandidates() {
+      const res = await fetch('/api/candidates');
+      const candidates = await res.json();
+      const list = document.getElementById('candidate-list');
+      const empty = document.getElementById('empty-state');
+      list.innerHTML = '';
+
+      if (candidates.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      candidates.forEach(candidate => {
+        const row = document.createElement('div');
+        row.className = 'candidate-row';
+        row.dataset.candidateId = candidate.id;
+        row.innerHTML = `
+          <span class="candidate-name">${candidate.name}</span>
+          <span class="candidate-status">Active</span>
+          <button
+            class="archive-btn"
+            data-id="${candidate.id}"
+            aria-label="Archive ${candidate.name}"
+          >Archive</button>
+        `;
+        list.appendChild(row);
+      });
+
+      document.querySelectorAll('.archive-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          await fetch(`/api/candidates/${id}/archive`, { method: 'POST' });
+          await loadCandidates();
+        });
+      });
+    }
+
+    loadCandidates();
+  </script>
+</body>
+</html>
